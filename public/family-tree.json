@@ -1,0 +1,634 @@
+{
+  "id": "ANCESTOR-NEEL-KANTHA",
+  "name": "Neel kantha",
+  "nickname": "",
+  "gender": "Male",
+  "generation": 1,
+  "father": "",
+  "mother": "",
+  "spouse": "",
+  "location": "",
+  "contact": "",
+  "children": [
+    {
+      "id": "ANCESTOR-RAM-KARAN",
+      "name": "Ram Karan Lal Das",
+      "nickname": "",
+      "gender": "Male",
+      "generation": 2,
+      "father": "Neel kantha",
+      "mother": "",
+      "spouse": "",
+      "location": "",
+      "contact": "",
+      "children": [
+        {
+          "id": "ANCESTOR-RAJA-RAM",
+          "name": "Raja Ram Lal das",
+          "nickname": "",
+          "gender": "Male",
+          "generation": 3,
+          "father": "Ram Karan Lal Das",
+          "mother": "",
+          "spouse": "",
+          "location": "",
+          "contact": "",
+          "children": [
+            {
+              "id": "A1",
+              "name": "Pradhuman Lal das",
+              "generation": 4,
+              "children": [
+                {
+                  "id": "A2",
+                  "name": "Bhagirath lal das",
+                  "generation": 5,
+                  "children": [
+                    {
+                      "id": "A3",
+                      "name": "Bechan Lal Das",
+                      "generation": 6,
+                      "children": [
+                        {
+                          "id": "A4",
+                          "name": "Achal singh",
+                          "generation": 7,
+                          "children": [
+                            {
+                              "id": "G1-1",
+                              "name": "Jai Mangal Singh",
+                              "generation": 8,
+                              "children": [
+                                {
+                                  "id": "G2-1",
+                                  "name": "Laxman Singh",
+                                  "generation": 9,
+                                  "children": [
+                                    {
+                                      "id": "G3-1",
+                                      "name": "Chinta Lal",
+                                      "generation": 10,
+                                      "children": [
+                                        {
+                                          "id": "G4-1",
+                                          "name": "Raghunath Singh",
+                                          "generation": 11,
+                                          "children": [
+                                            {
+                                              "id": "G5-1",
+                                              "name": "Tripti Narayan Sinha",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-1",
+                                                  "name": "Rajesh Kumar",
+                                                  "generation": 13,
+                                                  "children": [
+                                                    {
+                                                      "id": "G7-1",
+                                                      "name": "Raj Pushp",
+                                                      "generation": 14,
+                                                      "children": [],
+                                                      "nickname": ""
+                                                    },
+                                                    {
+                                                      "id": "G7-2",
+                                                      "name": "Raj Deep",
+                                                      "generation": 14,
+                                                      "children": [],
+                                                      "nickname": ""
+                                                    }
+                                                  ],
+                                                  "nickname": ""
+                                                },
+                                                {
+                                                  "id": "G6-2",
+                                                  "name": "Akhilesh Kumar",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                },
+                                                {
+                                                  "id": "G6-3",
+                                                  "name": "Satish Kumar",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                },
+                                                {
+                                                  "id": "G6-4",
+                                                  "name": "Lalitesh Kumar",
+                                                  "generation": 13,
+                                                  "children": [
+                                                    {
+                                                      "id": "G7-3",
+                                                      "name": "Vedant Sinha",
+                                                      "generation": 14,
+                                                      "children": [],
+                                                      "nickname": ""
+                                                    }
+                                                  ],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-2",
+                                              "name": "Shashi Bhushan Sinha",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-5",
+                                                  "name": "Rahul Roushan",
+                                                  "generation": 13,
+                                                  "children": [
+                                                    {
+                                                      "id": "G7-4",
+                                                      "name": "Rajveer Sinha",
+                                                      "generation": 14,
+                                                      "children": [],
+                                                      "nickname": ""
+                                                    }
+                                                  ],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-3",
+                                              "name": "Vijay Bhushan Sinha",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-6",
+                                                  "name": "Rishav Kumar",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                },
+                                                {
+                                                  "id": "G6-7",
+                                                  "name": "Prabhat Kumar",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                },
+                                                {
+                                                  "id": "G6-8",
+                                                  "name": "Prashant Kumar",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-4",
+                                              "name": "Indra Bhushan Sinha",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-9",
+                                                  "name": "Saurav Kumar",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                },
+                                                {
+                                                  "id": "G6-10",
+                                                  "name": "Gaurav Kumar",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-5",
+                                              "name": "Uday Bhushan Sinha",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-11",
+                                                  "name": "Shanoo Ranjan",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                },
+                                                {
+                                                  "id": "G6-12",
+                                                  "name": "Priyanshu Ranjan",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-6",
+                                              "name": "Ravi Bhushan Sinha",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-13",
+                                                  "name": "Atul Kumar",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            }
+                                          ],
+                                          "nickname": ""
+                                        }
+                                      ],
+                                      "nickname": ""
+                                    },
+                                    {
+                                      "id": "G3-2",
+                                      "name": "Kuldeep Singh",
+                                      "generation": 10,
+                                      "children": [
+                                        {
+                                          "id": "G4-2",
+                                          "name": "Dashrath Prasad Singh",
+                                          "generation": 11,
+                                          "children": [
+                                            {
+                                              "id": "G5-7",
+                                              "name": "Vinod Sinha",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-14",
+                                                  "name": "Vinayak Sinha",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-8",
+                                              "name": "Harendra Hridaya",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-15",
+                                                  "name": "Gaurav Hridaya",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-9",
+                                              "name": "Hemendra Sinha",
+                                              "generation": 12,
+                                              "children": [],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-10",
+                                              "name": "Madhurendra Sinha",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-16",
+                                                  "name": "Ankur Sinha",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            }
+                                          ],
+                                          "nickname": ""
+                                        },
+                                        {
+                                          "id": "G4-3",
+                                          "name": "Krishna Vallabh Singh",
+                                          "generation": 11,
+                                          "children": [],
+                                          "nickname": ""
+                                        },
+                                        {
+                                          "id": "G4-4",
+                                          "name": "Jaivallabh Singh",
+                                          "generation": 11,
+                                          "children": [
+                                            {
+                                              "id": "G5-11",
+                                              "name": "Shailendra Sinha",
+                                              "generation": 12,
+                                              "children": [],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-12",
+                                              "name": "Pintu",
+                                              "generation": 12,
+                                              "children": [],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-13",
+                                              "name": "Sintu",
+                                              "generation": 12,
+                                              "children": [],
+                                              "nickname": ""
+                                            }
+                                          ],
+                                          "nickname": ""
+                                        }
+                                      ],
+                                      "nickname": ""
+                                    },
+                                    {
+                                      "id": "G3-3",
+                                      "name": "Jugal Singh",
+                                      "generation": 10,
+                                      "children": [
+                                        {
+                                          "id": "G4-5",
+                                          "name": "Kailash Prasad Singh",
+                                          "generation": 11,
+                                          "children": [
+                                            {
+                                              "id": "G5-14",
+                                              "name": "Kamta Sinha",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-17",
+                                                  "name": "Tushar Kumar",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                },
+                                                {
+                                                  "id": "G6-18",
+                                                  "name": "Tanmay Kumar",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-15",
+                                              "name": "Raman Sinha",
+                                              "generation": 12,
+                                              "children": [],
+                                              "nickname": ""
+                                            }
+                                          ],
+                                          "nickname": ""
+                                        }
+                                      ],
+                                      "nickname": ""
+                                    }
+                                  ],
+                                  "nickname": ""
+                                },
+                                {
+                                  "id": "G2-2",
+                                  "name": "Prem Lal",
+                                  "generation": 9,
+                                  "children": [
+                                    {
+                                      "id": "G3-4",
+                                      "name": "Sokhi Lal",
+                                      "generation": 10,
+                                      "children": [
+                                        {
+                                          "id": "G4-6",
+                                          "name": "Gauri Shankar Singh",
+                                          "generation": 11,
+                                          "children": [
+                                            {
+                                              "id": "G5-16",
+                                              "name": "Vishwanath Singh",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-19",
+                                                  "name": "Raja Kumar",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                },
+                                                {
+                                                  "id": "G6-20",
+                                                  "name": "Amit Kumar",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-17",
+                                              "name": "Arun Singh",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-21",
+                                                  "name": "Digamber",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                },
+                                                {
+                                                  "id": "G6-22",
+                                                  "name": "Aashu",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            }
+                                          ],
+                                          "nickname": ""
+                                        },
+                                        {
+                                          "id": "G4-7",
+                                          "name": "Maheshawar Singh",
+                                          "generation": 11,
+                                          "children": [
+                                            {
+                                              "id": "G5-18",
+                                              "name": "Mithilesh Singh",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-23",
+                                                  "name": "Santosh",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                },
+                                                {
+                                                  "id": "G6-24",
+                                                  "name": "Gagan",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-19",
+                                              "name": "Madan Singh",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-25",
+                                                  "name": "Chandan Sinha",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                },
+                                                {
+                                                  "id": "G6-26",
+                                                  "name": "Ranjan Sinha",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-20",
+                                              "name": "Niteshwar Singh",
+                                              "generation": 12,
+                                              "children": [
+                                                {
+                                                  "id": "G6-27",
+                                                  "name": "Manish",
+                                                  "generation": 13,
+                                                  "children": [],
+                                                  "nickname": ""
+                                                }
+                                              ],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-21",
+                                              "name": "Bipin Singh",
+                                              "generation": 12,
+                                              "children": [],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-22",
+                                              "name": "Sanjay Singh",
+                                              "generation": 12,
+                                              "children": [],
+                                              "nickname": ""
+                                            },
+                                            {
+                                              "id": "G5-23",
+                                              "name": "Sindhu Singh",
+                                              "generation": 12,
+                                              "children": [],
+                                              "nickname": ""
+                                            }
+                                          ],
+                                          "nickname": ""
+                                        }
+                                      ],
+                                      "nickname": ""
+                                    }
+                                  ],
+                                  "nickname": ""
+                                },
+                                {
+                                  "id": "G2-3",
+                                  "name": "Rambhajju Singh",
+                                  "generation": 9,
+                                  "children": [
+                                    {
+                                      "id": "G3-5",
+                                      "name": "Narayan Singh",
+                                      "generation": 10,
+                                      "children": [
+                                        {
+                                          "id": "G4-8",
+                                          "name": "Anil Singh",
+                                          "generation": 11,
+                                          "children": [],
+                                          "nickname": ""
+                                        },
+                                        {
+                                          "id": "G4-9",
+                                          "name": "Sunil Singh",
+                                          "generation": 11,
+                                          "children": [],
+                                          "nickname": ""
+                                        }
+                                      ],
+                                      "nickname": ""
+                                    },
+                                    {
+                                      "id": "G3-6",
+                                      "name": "Lal Ji",
+                                      "generation": 10,
+                                      "children": [
+                                        {
+                                          "id": "G4-10",
+                                          "name": "Ranjeet Singh",
+                                          "generation": 11,
+                                          "children": [],
+                                          "nickname": ""
+                                        },
+                                        {
+                                          "id": "G4-11",
+                                          "name": "Sanjeet Singh",
+                                          "generation": 11,
+                                          "children": [],
+                                          "nickname": ""
+                                        }
+                                      ],
+                                      "nickname": ""
+                                    }
+                                  ],
+                                  "nickname": ""
+                                }
+                              ],
+                              "nickname": ""
+                            }
+                          ],
+                          "nickname": ""
+                        }
+                      ],
+                      "nickname": ""
+                    }
+                  ],
+                  "nickname": ""
+                }
+              ],
+              "nickname": "",
+              "father": "Raja Ram Lal das"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
