@@ -1,0 +1,12 @@
+{
+  "name": "family-tree-explorer",
+  "private": true,
+  "version": "1.1.0",
+  "scripts": {
+    "serve": "firebase emulators:start --only hosting,database",
+    "deploy": "firebase deploy --only hosting,database"
+  },
+  "devDependencies": {
+    "firebase-tools": "^14.11.2"
+  }
+}
