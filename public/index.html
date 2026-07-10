@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<title>Family Tree Explorer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<style>
+/* ── Reset & base ───────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Georgia,serif;
+  background:var(--bg);color:var(--text);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── Colour tokens ──────────────────────────────────────────── */
+:root{
+  --bg:#f4f2ec;--bg2:#ffffff;--bg3:#eceae2;--bg4:#e2dfd5;
+  --text:#1c1a14;--text2:#66625a;--text3:#a09c94;
+  --border:rgba(0,0,0,.08);--border2:rgba(0,0,0,.15);
+  --accent:#b85c2c;--accent-light:#f4e4d8;
+  --sh:0 2px 12px rgba(0,0,0,.08);--sh2:0 8px 32px rgba(0,0,0,.14);
+  --r:12px;--safe-b:env(safe-area-inset-bottom,0px);
+}
+[data-dark]{
+  --bg:#141210;--bg2:#1e1c16;--bg3:#262420;--bg4:#2e2c26;
+  --text:#ede8de;--text2:#9a9488;--text3:#68645c;
+  --border:rgba(255,255,255,.07);--border2:rgba(255,255,255,.14);
+  --sh:0 2px 12px rgba(0,0,0,.5);--sh2:0 8px 32px rgba(0,0,0,.7);
+}
+
+.syncbar{height:30px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:12px;color:var(--text2);background:var(--bg2);border-bottom:1px solid var(--border);padding:0 12px}.sync-dot{width:8px;height:8px;border-radius:50%;display:inline-block}.sync-ok{background:#2f9e63}.sync-saving{background:#d99a2b}.sync-error{background:#d94b4b}.who-link{border:0;background:transparent;color:var(--accent);cursor:pointer;font:inherit;padding:2px 4px}.identity-mask{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.48);display:flex;align-items:center;justify-content:center;padding:20px}.identity-card{width:min(420px,100%);background:var(--bg2);border:1px solid var(--border2);border-radius:16px;box-shadow:var(--sh2);padding:24px}.identity-card h2{margin-bottom:8px}.identity-card p{color:var(--text2);font-size:14px;line-height:1.5;margin-bottom:16px}.identity-card input{width:100%;padding:12px 14px;border:1px solid var(--border2);border-radius:10px;background:var(--bg);color:var(--text);font-size:16px;margin-bottom:12px}
+
+/* ── Layout shell ───────────────────────────────────────────── */
+#root{display:flex;flex-direction:column;height:100dvh;height:100vh;}
+
+/* ── Top bar ────────────────────────────────────────────────── */
+.topbar{
+  height:52px;background:var(--bg2);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;padding:0 12px;
+  flex-shrink:0;z-index:200;box-shadow:var(--sh);
+  padding-top:env(safe-area-inset-top,0);
+}
+.topbar-logo{font-size:16px;font-weight:700;color:var(--accent);white-space:nowrap;letter-spacing:-.3px;}
+.topbar-logo span{color:var(--text2);font-weight:400;font-size:13px;}
+.topbar-gap{flex:1;}
+
+/* Search in topbar */
+.tsrch{position:relative;flex:1;max-width:220px;}
+.tsrch input{
+  width:100%;padding:7px 10px 7px 30px;
+  border:1px solid var(--border2);border-radius:20px;
+  background:var(--bg3);color:var(--text);
+  font-size:13px;font-family:inherit;outline:none;
+  transition:border-color .2s,background .2s;
+}
+.tsrch input:focus{border-color:var(--accent);background:var(--bg2);}
+.tsrch-ic{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:13px;pointer-events:none;}
+.srch-drop{
+  position:absolute;top:calc(100% + 6px);left:0;right:0;
+  background:var(--bg2);border:1px solid var(--border2);border-radius:14px;
+  box-shadow:var(--sh2);z-index:500;max-height:60vh;overflow-y:auto;
+}
+.srch-item{
+  padding:12px 16px;font-size:13px;cursor:pointer;
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;
+  transition:background .12s;
+}
+.srch-item:last-child{border-bottom:none;}
+.srch-item:active,.srch-item:hover{background:var(--bg3);}
+.gbadge{font-size:10px;padding:2px 8px;border-radius:20px;margin-left:auto;white-space:nowrap;}
+
+/* ── Canvas area ────────────────────────────────────────────── */
+.canvas{flex:1;position:relative;overflow:hidden;touch-action:none;}
+#tree-svg{width:100%;height:100%;display:block;touch-action:none;}
+
+/* ── Floating action buttons ────────────────────────────────── */
+.fab-group{
+  position:absolute;right:14px;bottom:calc(70px + var(--safe-b));
+  display:flex;flex-direction:column;gap:8px;z-index:100;
+}
+.fab{
+  width:44px;height:44px;border-radius:50%;
+  background:var(--bg2);border:1px solid var(--border2);
+  color:var(--text);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:var(--sh2);transition:transform .15s,background .15s;
+  touch-action:manipulation;
+}
+.fab:active{transform:scale(.92);background:var(--bg3);}
+.fab.pri{background:var(--accent);color:#fff;border-color:var(--accent);}
+.fab.pri:active{filter:brightness(.9);}
+
+/* Status pill */
+.status-pill{
+  position:absolute;left:12px;bottom:calc(76px + var(--safe-b));
+  background:var(--bg2);border:1px solid var(--border);border-radius:20px;
+  padding:5px 12px;font-size:11px;color:var(--text3);
+  box-shadow:var(--sh);pointer-events:none;z-index:100;
+  white-space:nowrap;max-width:calc(100% - 80px);overflow:hidden;text-overflow:ellipsis;
+}
+
+/* ── Bottom navigation bar ──────────────────────────────────── */
+.bottomnav{
+  height:calc(58px + var(--safe-b));
+  padding-bottom:var(--safe-b);
+  background:var(--bg2);border-top:1px solid var(--border);
+  display:flex;align-items:stretch;flex-shrink:0;z-index:200;
+  box-shadow:0 -2px 12px rgba(0,0,0,.06);
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;background:none;border:none;color:var(--text3);
+  font-size:10px;font-family:inherit;cursor:pointer;
+  padding:6px 4px;transition:color .15s;touch-action:manipulation;
+  border-radius:0;
+}
+.nav-btn:active,.nav-btn.active{color:var(--accent);}
+.nav-btn svg,.nav-btn .ni{font-size:20px;line-height:1;}
+
+/* ── Drawer overlay ─────────────────────────────────────────── */
+.drawer-mask{
+  position:fixed;inset:0;background:rgba(0,0,0,.45);
+  z-index:300;opacity:0;pointer-events:none;transition:opacity .28s;
+}
+.drawer-mask.open{opacity:1;pointer-events:auto;}
+
+/* ── Drawer panel ───────────────────────────────────────────── */
+.drawer{
+  position:fixed;top:0;bottom:0;left:-100%;width:min(320px,88vw);
+  background:var(--bg2);z-index:301;
+  display:flex;flex-direction:column;
+  transition:left .3s cubic-bezier(.4,0,.2,1);
+  box-shadow:var(--sh2);
+  padding-top:env(safe-area-inset-top,0);
+  padding-left:env(safe-area-inset-left,0);
+}
+.drawer.open{left:0;}
+.drawer-right{
+  position:fixed;top:0;bottom:0;right:-100%;width:min(320px,92vw);
+  background:var(--bg2);z-index:301;
+  display:flex;flex-direction:column;
+  transition:right .3s cubic-bezier(.4,0,.2,1);
+  box-shadow:var(--sh2);
+  padding-top:env(safe-area-inset-top,0);
+  padding-right:env(safe-area-inset-right,0);
+}
+.drawer-right.open{right:0;}
+.drawer-header{
+  display:flex;align-items:center;gap:10px;
+  padding:14px 16px;border-bottom:1px solid var(--border);
+  flex-shrink:0;
+}
+.drawer-title{font-size:16px;font-weight:700;}
+.drawer-close{
+  margin-left:auto;width:36px;height:36px;border-radius:50%;
+  background:var(--bg3);border:none;color:var(--text);font-size:18px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  touch-action:manipulation;
+}
+.drawer-close:active{background:var(--bg4);}
+.drawer-body{flex:1;overflow-y:auto;padding:16px;-webkit-overflow-scrolling:touch;}
+
+/* ── Scrollbar (thin) ───────────────────────────────────────── */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+
+/* ── Section + controls inside drawer ──────────────────────── */
+.sec{margin-bottom:20px;}
+.sec-t{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:var(--text3);margin-bottom:10px;}
+
+.drop-z{
+  border:2px dashed var(--border2);border-radius:12px;padding:16px;
+  text-align:center;font-size:12px;color:var(--text3);cursor:pointer;
+  transition:all .2s;margin-bottom:10px;
+}
+.drop-z:active,.drop-z.on{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+
+.json-ta{
+  width:100%;height:140px;padding:10px;
+  border:1px solid var(--border2);border-radius:10px;
+  background:var(--bg3);color:var(--text);
+  font-family:'Courier New',monospace;font-size:10.5px;
+  resize:vertical;outline:none;line-height:1.5;
+  transition:border-color .15s;
+}
+.json-ta:focus{border-color:var(--accent);}
+
+.msg-err{background:#fde8e8;color:#b02020;border:1px solid #f5c6c6;border-radius:8px;padding:8px 12px;font-size:11px;margin-top:6px;}
+.msg-ok {background:#e8f5e9;color:#256020;border:1px solid #c8e6c9;border-radius:8px;padding:8px 12px;font-size:11px;margin-top:6px;}
+[data-dark] .msg-err{background:#3a0e0e;color:#ff9898;border-color:#5a1e1e;}
+[data-dark] .msg-ok {background:#0e2a12;color:#90dd90;border-color:#1e4a22;}
+
+/* ── Button system ──────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  padding:9px 14px;border-radius:10px;border:1px solid var(--border2);
+  background:var(--bg2);color:var(--text);font-size:13px;cursor:pointer;
+  font-family:inherit;white-space:nowrap;transition:background .15s,border-color .15s;
+  touch-action:manipulation;min-height:40px;
+}
+.btn:active{background:var(--bg3);}
+.btn.pri{background:var(--accent);color:#fff;border-color:var(--accent);}
+.btn.pri:active{filter:brightness(.9);}
+.btn.sm{padding:7px 11px;font-size:12px;min-height:34px;}
+.btn.danger{color:#c0392b;border-color:#e0b0a0;}
+.btn.danger:active{background:#fde8e8;}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-row .btn{flex:1;}
+
+/* ── Generation legend rows ─────────────────────────────────── */
+.gen-row{
+  display:flex;align-items:center;gap:8px;
+  padding:9px 0;border-bottom:1px solid var(--border);
+}
+.gen-row:last-child{border-bottom:none;}
+.gen-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+.gen-label{flex:1;font-size:12px;}
+.gen-count{font-size:11px;color:var(--text3);}
+.gen-actions{display:flex;gap:4px;}
+.gen-ic{
+  width:30px;height:30px;border-radius:8px;border:1px solid var(--border2);
+  background:var(--bg3);color:var(--text);font-size:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  touch-action:manipulation;transition:background .12s;
+}
+.gen-ic:active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+/* ── Stat rows ──────────────────────────────────────────────── */
+.stat-r{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.stat-r:last-child{border-bottom:none;}
+.stat-l{color:var(--text2);}
+
+/* ── Detail panel (right drawer) ───────────────────────────── */
+.avatar{
+  width:60px;height:60px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:700;color:#fff;margin:0 auto 12px;
+}
+.detail-name{font-size:17px;font-weight:700;text-align:center;margin-bottom:4px;}
+.detail-sub{font-size:13px;color:var(--text2);text-align:center;margin-bottom:16px;}
+.chip{
+  padding:10px 12px;border-radius:10px;background:var(--bg3);
+  border:1px solid transparent;font-size:12px;cursor:pointer;
+  margin-bottom:6px;display:block;transition:border-color .15s;
+  touch-action:manipulation;
+}
+.chip:active,.chip:hover{border-color:var(--accent);}
+.drow{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.drow:last-child{border-bottom:none;}
+.dl{color:var(--text2);}
+.dv{font-weight:600;font-family:system-ui,sans-serif;text-align:right;}
+
+/* ── Modal ──────────────────────────────────────────────────── */
+.modal-mask{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:flex;align-items:flex-end;justify-content:center;padding-bottom:var(--safe-b);}
+@media(min-width:500px){.modal-mask{align-items:center;padding:20px;}}
+.modal{
+  background:var(--bg2);border-radius:20px 20px 0 0;
+  padding:24px 20px 20px;width:100%;max-width:440px;
+  box-shadow:var(--sh2);
+}
+@media(min-width:500px){.modal{border-radius:18px;}}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:18px;}
+.fg{margin-bottom:14px;}
+.fg label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;}
+.fg input{
+  width:100%;padding:11px 14px;border:1px solid var(--border2);border-radius:10px;
+  background:var(--bg3);color:var(--text);font-size:15px;font-family:inherit;
+  outline:none;-webkit-appearance:none;
+}
+.fg input:focus{border-color:var(--accent);}
+.mfoot{display:flex;gap:10px;margin-top:10px;}
+
+/* ── Toast ──────────────────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:calc(74px + var(--safe-b));left:50%;
+  transform:translateX(-50%);
+  background:var(--text);color:var(--bg);
+  padding:10px 22px;border-radius:24px;font-size:13px;
+  z-index:600;pointer-events:none;
+  animation:tin .25s ease;white-space:nowrap;
+}
+@keyframes tin{from{opacity:0;transform:translateX(-50%) translateY(10px);}}
+
+/* ── Expand hint overlay (first time) ───────────────────────── */
+.hint{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:var(--bg2);border:1px solid var(--border2);border-radius:14px;
+  padding:16px 20px;text-align:center;font-size:13px;color:var(--text2);
+  box-shadow:var(--sh2);z-index:50;pointer-events:none;max-width:260px;
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="/firebase-config.js"></script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getDatabase, ref, get, set, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+const cfg = window.FAMILY_TREE_FIREBASE_CONFIG;
+const bridge = { ready:false, error:null, listeners:[], emit(v){ this.listeners.forEach(fn=>fn(v)); }, subscribe(fn){ this.listeners.push(fn); return ()=>this.listeners=this.listeners.filter(x=>x!==fn); } };
+window.familySync = bridge;
+if (!cfg || !cfg.apiKey || cfg.apiKey.includes('REPLACE_ME') || !cfg.databaseURL) {
+  bridge.error = 'Firebase Realtime Database is not configured';
+  bridge.emit({type:'status', status:'error', message:bridge.error});
+} else {
+  try {
+    const app = initializeApp(cfg);
+    const db = getDatabase(app);
+    const treeRef = ref(db, 'familyTree/main');
+
+    bridge.save = async (tree, editor) => {
+      bridge.emit({type:'status', status:'saving'});
+      await set(treeRef, {
+        tree,
+        lastEditedBy: editor,
+        lastEditedAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+    };
+
+    bridge.init = async (seed) => {
+      const snap = await get(treeRef);
+      if (!snap.exists()) {
+        await set(treeRef, {
+          tree: seed,
+          lastEditedBy: 'System',
+          lastEditedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
+    };
+
+    onValue(treeRef, snap => {
+      if (snap.exists()) {
+        const d = snap.val();
+        bridge.emit({
+          type:'remote',
+          tree:d.tree,
+          lastEditedBy:d.lastEditedBy || 'Unknown',
+          lastEditedAt:d.lastEditedAt ? new Date(d.lastEditedAt).toISOString() : null
+        });
+        bridge.emit({type:'status', status:'synced'});
+      }
+    }, err => bridge.emit({type:'status', status:'error', message:err.message}));
+
+    bridge.ready = true;
+    bridge.emit({type:'status', status:'synced'});
+  } catch(e) {
+    bridge.error = e.message;
+    bridge.emit({type:'status', status:'error', message:e.message});
+  }
+}
+</script>
+<script>
+const {useState,useEffect,useRef,useMemo,useCallback}=React;
+
+/* ── Palette (7 gens, light + dark) ─────────────────────────── */
+const PL=[
+  {bg:'#fef0e6',bd:'#c0551e',tx:'#6b2208'},
+  {bg:'#e8f5ee',bd:'#1e7a50',tx:'#0a3322'},
+  {bg:'#e8eeff',bd:'#2246c8',tx:'#0c1f70'},
+  {bg:'#f2eaff',bd:'#6d28d9',tx:'#360d8c'},
+  {bg:'#fff7e0',bd:'#b06000',tx:'#5a2e00'},
+  {bg:'#e0f7f5',bd:'#0e7a72',tx:'#043c38'},
+  {bg:'#fce8f4',bd:'#c01870',tx:'#620838'},
+  {bg:'#e8f8e8',bd:'#2a7a20',tx:'#0e3c0a'},
+];
+const PD=[
+  {bg:'#3a1808',bd:'#f09060',tx:'#fdd0a8'},
+  {bg:'#0a2a18',bd:'#40cc80',tx:'#98eac0'},
+  {bg:'#081230',bd:'#6888f8',tx:'#b8c8f8'},
+  {bg:'#1c0838',bd:'#b090f8',tx:'#d8c8f8'},
+  {bg:'#302008',bd:'#e8b040',tx:'#f8dea0'},
+  {bg:'#082820',bd:'#20c8be',tx:'#98e8e4'},
+  {bg:'#380820',bd:'#f870b0',tx:'#f8b8d8'},
+  {bg:'#0a2808',bd:'#60c858',tx:'#b0e8a8'},
+];
+const gc=(gen,dark)=>(dark?PD:PL)[Math.max(0,(gen-1))%8];
+
+/* ── Seed data ───────────────────────────────────────────────── */
+const SEED={"id":"A1","name":"Pradhuman Lal das","generation":1,"children":[{"id":"A2","name":"Bhagirath lal das","generation":2,"children":[{"id":"A3","name":"Bechan Lal Das","generation":3,"children":[{"id":"A4","name":"Achal singh","generation":4,"children":[{"id":"G1-1","name":"Jai Mangal Singh","generation":5,"children":[{"id":"G2-1","name":"Laxman Singh","generation":6,"children":[{"id":"G3-1","name":"Chinta Lal","generation":7,"children":[{"id":"G4-1","name":"Raghunath Singh","generation":8,"children":[{"id":"G5-1","name":"Tripti Narayan Sinha","generation":9,"children":[{"id":"G6-1","name":"Rajesh Kumar","generation":10,"children":[{"id":"G7-1","name":"Raj Pushp","generation":11,"children":[]},{"id":"G7-2","name":"Raj Deep","generation":11,"children":[]}]},{"id":"G6-2","name":"Akhilesh Kumar","generation":10,"children":[]},{"id":"G6-3","name":"Satish Kumar","generation":10,"children":[]},{"id":"G6-4","name":"Lalitesh Kumar","generation":10,"children":[{"id":"G7-3","name":"Vedant Sinha","generation":11,"children":[]}]}]},{"id":"G5-2","name":"Shashi Bhushan Sinha","generation":9,"children":[{"id":"G6-5","name":"Rahul Roushan","generation":10,"children":[{"id":"G7-4","name":"Rajveer Sinha","generation":11,"children":[]}]}]},{"id":"G5-3","name":"Vijay Bhushan Sinha","generation":9,"children":[{"id":"G6-6","name":"Rishav Kumar","generation":10,"children":[]},{"id":"G6-7","name":"Prabhat Kumar","generation":10,"children":[]},{"id":"G6-8","name":"Prashant Kumar","generation":10,"children":[]}]},{"id":"G5-4","name":"Indra Bhushan Sinha","generation":9,"children":[{"id":"G6-9","name":"Saurav Kumar","generation":10,"children":[]},{"id":"G6-10","name":"Gaurav Kumar","generation":10,"children":[]}]},{"id":"G5-5","name":"Uday Bhushan Sinha","generation":9,"children":[{"id":"G6-11","name":"Shanoo Ranjan","generation":10,"children":[]},{"id":"G6-12","name":"Priyanshu Ranjan","generation":10,"children":[]}]},{"id":"G5-6","name":"Ravi Bhushan Sinha","generation":9,"children":[{"id":"G6-13","name":"Atul Kumar","generation":10,"children":[]}]}]}]},{"id":"G3-2","name":"Kuldeep Singh","generation":7,"children":[{"id":"G4-2","name":"Dashrath Prasad Singh","generation":8,"children":[{"id":"G5-7","name":"Vinod Sinha","generation":9,"children":[{"id":"G6-14","name":"Vinayak Sinha","generation":10,"children":[]}]},{"id":"G5-8","name":"Harendra Hridaya","generation":9,"children":[{"id":"G6-15","name":"Gaurav Hridaya","generation":10,"children":[]}]},{"id":"G5-9","name":"Hemendra Sinha","generation":9,"children":[]},{"id":"G5-10","name":"Madhurendra Sinha","generation":9,"children":[{"id":"G6-16","name":"Ankur Sinha","generation":10,"children":[]}]}]},{"id":"G4-3","name":"Krishna Vallabh Singh","generation":8,"children":[]},{"id":"G4-4","name":"Jaivallabh Singh","generation":8,"children":[{"id":"G5-11","name":"Shailendra Sinha","generation":9,"children":[]},{"id":"G5-12","name":"Pintu","generation":9,"children":[]},{"id":"G5-13","name":"Sintu","generation":9,"children":[]}]}]},{"id":"G3-3","name":"Jugal Singh","generation":7,"children":[{"id":"G4-5","name":"Kailash Prasad Singh","generation":8,"children":[{"id":"G5-14","name":"Kamta Sinha","generation":9,"children":[{"id":"G6-17","name":"Tushar Kumar","generation":10,"children":[]},{"id":"G6-18","name":"Tanmay Kumar","generation":10,"children":[]}]},{"id":"G5-15","name":"Raman Sinha","generation":9,"children":[]}]}]}]},{"id":"G2-2","name":"Prem Lal","generation":6,"children":[{"id":"G3-4","name":"Sokhi Lal","generation":7,"children":[{"id":"G4-6","name":"Gauri Shankar Singh","generation":8,"children":[{"id":"G5-16","name":"Vishwanath Singh","generation":9,"children":[{"id":"G6-19","name":"Raja Kumar","generation":10,"children":[]},{"id":"G6-20","name":"Amit Kumar","generation":10,"children":[]}]},{"id":"G5-17","name":"Arun Singh","generation":9,"children":[{"id":"G6-21","name":"Digamber","generation":10,"children":[]},{"id":"G6-22","name":"Aashu","generation":10,"children":[]}]}]},{"id":"G4-7","name":"Maheshawar Singh","generation":8,"children":[{"id":"G5-18","name":"Mithilesh Singh","generation":9,"children":[{"id":"G6-23","name":"Santosh","generation":10,"children":[]},{"id":"G6-24","name":"Gagan","generation":10,"children":[]}]},{"id":"G5-19","name":"Madan Singh","generation":9,"children":[{"id":"G6-25","name":"Chandan Sinha","generation":10,"children":[]},{"id":"G6-26","name":"Ranjan Sinha","generation":10,"children":[]}]},{"id":"G5-20","name":"Niteshwar Singh","generation":9,"children":[{"id":"G6-27","name":"Manish","generation":10,"children":[]}]},{"id":"G5-21","name":"Bipin Singh","generation":9,"children":[]},{"id":"G5-22","name":"Sanjay Singh","generation":9,"children":[]},{"id":"G5-23","name":"Sindhu Singh","generation":9,"children":[]}]}]}]},{"id":"G2-3","name":"Rambhajju Singh","generation":6,"children":[{"id":"G3-5","name":"Narayan Singh","generation":7,"children":[{"id":"G4-8","name":"Anil Singh","generation":8,"children":[]},{"id":"G4-9","name":"Sunil Singh","generation":8,"children":[]}]},{"id":"G3-6","name":"Lal Ji","generation":7,"children":[{"id":"G4-10","name":"Ranjeet Singh","generation":8,"children":[]},{"id":"G4-11","name":"Sanjeet Singh","generation":8,"children":[]}]}]}]}]}]}]}]};
+
+/* ── Tree utilities ───────────────────────────────────────────── */
+function flatten(node,pid=null,out=[]){
+  out.push({...node,_pid:pid,children:node.children??[]});
+  (node.children??[]).forEach(c=>flatten(c,node.id,out));
+  return out;
+}
+function findNode(root,id){
+  if(!root)return null;
+  if(root.id===id)return root;
+  for(const c of(root.children??[])){const f=findNode(c,id);if(f)return f;}
+  return null;
+}
+function getAncestors(id,flat){
+  const mp=Object.fromEntries(flat.map(n=>[n.id,n]));
+  const s=new Set();let cur=mp[id];
+  while(cur?._pid){s.add(cur._pid);cur=mp[cur._pid];}
+  return s;
+}
+function getDescendants(id,flat){
+  const s=new Set(),cm={};
+  flat.forEach(n=>{if(n._pid){cm[n._pid]=cm[n._pid]??[];cm[n._pid].push(n.id);}});
+  const q=[id];
+  while(q.length){const x=q.shift();(cm[x]??[]).forEach(c=>{s.add(c);q.push(c);});}
+  return s;
+}
+function allWithKids(node,s=new Set()){
+  if((node.children??[]).length>0)s.add(node.id);
+  (node.children??[]).forEach(c=>allWithKids(c,s));
+  return s;
+}
+function updateNode(root,id,ch){return root.id===id?{...root,...ch}:{...root,children:(root.children??[]).map(c=>updateNode(c,id,ch))};}
+function deleteNode(root,id){return{...root,children:(root.children??[]).filter(c=>c.id!==id).map(c=>deleteNode(c,id))};}
+function addChild(root,pid,n){return root.id===pid?{...root,children:[...(root.children??[]),n]}:{...root,children:(root.children??[]).map(c=>addChild(c,pid,n))};}
+function validate(d){
+  if(!d||typeof d!=='object')return'Root must be an object';
+  if(!d.id)return'Missing: id';
+  if(!d.name)return'Missing: name';
+  if(d.children!==undefined&&!Array.isArray(d.children))return'"children" must be array';
+  return null;
+}
+const initials=n=>n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+
+/* ── Auto-generated sequential unique ID ────────────────────────
+   Scans every existing id in the tree, pulls the trailing number
+   off each (e.g. "G7-4" → 4, "P12" → 12), and returns the next
+   free "P<n>" id. Guaranteed unique against whatever is currently
+   in the tree, even after imports/deletes. */
+function nextId(flat){
+  let maxN=0;
+  (flat??[]).forEach(x=>{
+    const m=String(x.id).match(/(\d+)(?!.*\d)/);
+    if(m)maxN=Math.max(maxN,parseInt(m[1],10));
+  });
+  let n=maxN+1,id='P'+n;
+  const ids=new Set((flat??[]).map(x=>x.id));
+  while(ids.has(id)){n++;id='P'+n;}
+  return id;
+}
+
+/* ── Layout constants ─────────────────────────────────────────── */
+const NW=148,NH=56,HGAP=20,VGAP=88;
+
+function computeLayout(data,collapsed){
+  function prune(node){
+    return{...node,children:collapsed.has(node.id)?[]:(node.children??[]).map(prune)};
+  }
+  const root=d3.hierarchy(prune(data));
+  d3.tree().nodeSize([NW+HGAP,NH+VGAP]).separation((a,b)=>a.parent===b.parent?1:1.3)(root);
+  const nodes=[],links=[];
+  root.each(n=>nodes.push({
+    id:n.data.id,name:n.data.name,gen:n.data.generation??1,
+    x:n.x,y:n.y,
+    hasKids:(findNode(data,n.data.id)?.children??[]).length>0,
+    isCollapsed:collapsed.has(n.data.id),
+  }));
+  root.links().forEach(l=>links.push({
+    sx:l.source.x,sy:l.source.y,tx:l.target.x,ty:l.target.y,
+    sid:l.source.data.id,tid:l.target.data.id,
+  }));
+  return{nodes,links};
+}
+
+/* ── SVG Tree ─────────────────────────────────────────────────── */
+function TreeSVG({data,collapsed,toggleCollapse,selId,onSelect,highlight,dark,onFitReady}){
+  const svgRef=useRef(null),gRef=useRef(null),zbRef=useRef(null);
+  const {nodes,links}=useMemo(()=>computeLayout(data,collapsed),[data,collapsed]);
+
+  function fit(ns,el,zb){
+    if(!ns.length||!el||!zb)return;
+    const xs=ns.map(n=>n.x),ys=ns.map(n=>n.y);
+    const x0=Math.min(...xs)-NW/2-50,x1=Math.max(...xs)+NW/2+50;
+    const y0=Math.min(...ys)-NH/2-50,y1=Math.max(...ys)+NH/2+50;
+    const W=el.clientWidth||360,H=el.clientHeight||600;
+    const sc=Math.min(W/(x1-x0),H/(y1-y0),1.0);
+    const tx=(W-sc*(x0+x1))/2,ty=(H-sc*(y0+y1))/2;
+    d3.select(el).transition().duration(450)
+      .call(zb.transform,d3.zoomIdentity.translate(tx,ty).scale(sc));
+  }
+
+  useEffect(()=>{
+    const svg=d3.select(svgRef.current);
+    const zb=d3.zoom().scaleExtent([0.04,4]).on('zoom',e=>{
+      d3.select(gRef.current).attr('transform',e.transform);
+      window._setZ&&window._setZ(Math.round(e.transform.k*100));
+    });
+    svg.call(zb);
+    zbRef.current=zb;
+    // expose globally
+    window._fit=()=>fit(nodes,svgRef.current,zbRef.current);
+    window._zIn=()=>d3.select(svgRef.current).transition().duration(200).call(zb.scaleBy,1.35);
+    window._zOut=()=>d3.select(svgRef.current).transition().duration(200).call(zb.scaleBy,0.74);
+    setTimeout(()=>fit(nodes,svgRef.current,zbRef.current),80);
+  },[]);
+
+  // Re-fit on structural changes
+  const prevLen=useRef(0);
+  useEffect(()=>{
+    window._fit=()=>fit(nodes,svgRef.current,zbRef.current);
+    if(prevLen.current!==nodes.length){
+      setTimeout(()=>fit(nodes,svgRef.current,zbRef.current),60);
+      prevLen.current=nodes.length;
+    }
+  },[nodes.length]);
+
+  const hilit=id=>highlight?.has(id);
+  const dim=id=>highlight&&highlight.size>0&&!highlight.has(id)&&id!==selId;
+
+  const linkPath=(sx,sy,tx,ty)=>{const m=(sy+ty)/2;return`M${sx},${sy+NH/2}C${sx},${m} ${tx},${m} ${tx},${ty-NH/2}`;};
+
+  return React.createElement('svg',{
+    ref:svgRef,id:'tree-svg',
+    style:{background:dark?'#141210':'#f4f2ec',touchAction:'none'}
+  },
+    React.createElement('g',{ref:gRef},
+      /* Links */
+      links.map((l,i)=>React.createElement('path',{
+        key:`l${i}`,d:linkPath(l.sx,l.sy,l.tx,l.ty),
+        fill:'none',
+        stroke:hilit(l.sid)&&hilit(l.tid)?(dark?'#e09070':'#b85c2c'):(dark?'rgba(255,255,255,.11)':'rgba(0,0,0,.11)'),
+        strokeWidth:hilit(l.sid)&&hilit(l.tid)?2.5:1.4,
+        opacity:dim(l.sid)||dim(l.tid)?.14:1,
+        style:{transition:'all .3s'}
+      })),
+      /* Nodes */
+      nodes.map(nd=>{
+        const col=gc(nd.gen,dark);
+        const sel=selId===nd.id;
+        const dimmed=dim(nd.id);
+        const label=nd.name.length>17?nd.name.slice(0,16)+'…':nd.name;
+        return React.createElement('g',{
+          key:nd.id,
+          transform:`translate(${nd.x-NW/2},${nd.y-NH/2})`,
+          style:{opacity:dimmed?.16:1,transition:'opacity .3s',cursor:'pointer'},
+          onClick:()=>onSelect(nd.id),
+        },
+          /* Shadow */
+          React.createElement('rect',{x:2,y:3,width:NW,height:NH,rx:11,fill:dark?'rgba(0,0,0,.35)':'rgba(0,0,0,.06)'}),
+          /* Card */
+          React.createElement('rect',{
+            width:NW,height:NH,rx:11,
+            fill:col.bg,stroke:col.bd,
+            strokeWidth:sel?2.8:1.2,
+            style:{filter:sel?`drop-shadow(0 0 8px ${col.bd}80)`:'none',transition:'all .25s'}
+          }),
+          /* Top bar */
+          React.createElement('rect',{x:0,y:0,width:NW,height:5,rx:4,fill:col.bd}),
+          /* Name */
+          React.createElement('text',{
+            x:NW/2,y:NH/2-7,textAnchor:'middle',dominantBaseline:'middle',
+            style:{fontSize:'11.5px',fontWeight:700,fontFamily:'Georgia,serif',fill:col.tx,pointerEvents:'none'}
+          },label),
+          /* Gen label */
+          React.createElement('text',{
+            x:NW/2,y:NH/2+10,textAnchor:'middle',dominantBaseline:'middle',
+            style:{fontSize:'10px',fontFamily:'Georgia,serif',fill:col.bd+'bb',pointerEvents:'none'}
+          },`Generation ${nd.gen}`),
+          /* Expand/Collapse button */
+          nd.hasKids&&React.createElement('g',{
+            onClick:e=>{e.stopPropagation();toggleCollapse(nd.id);},
+            style:{cursor:'pointer'}
+          },
+            React.createElement('circle',{cx:NW/2,cy:NH+1,r:12,fill:col.bd,stroke:col.bg,strokeWidth:2.5}),
+            React.createElement('text',{
+              x:NW/2,y:NH+1,textAnchor:'middle',dominantBaseline:'middle',
+              style:{fontSize:'16px',fontWeight:700,fill:'#fff',pointerEvents:'none',fontFamily:'sans-serif'}
+            },nd.isCollapsed?'+':'−')
+          )
+        );
+      })
+    )
+  );
+}
+
+/* ── Detail panel content ─────────────────────────────────────── */
+function DetailContent({id,flat,dark,onClose,onEdit,onAdd,onDelete}){
+  const node=flat.find(n=>n.id===id);if(!node)return null;
+  const col=gc(node.generation??1,dark);
+  const parent=flat.find(n=>n.id===node._pid);
+  const kids=flat.filter(n=>n._pid===id);
+  const sibs=flat.filter(n=>n._pid===node._pid&&n.id!==id);
+  const descCount=getDescendants(id,flat).size;
+
+  const Section=(label,items)=>items.length===0?null:[
+    React.createElement('div',{key:label+'t',className:'sec-t',style:{marginTop:14}},`${label} (${items.length})`),
+    ...items.map(it=>React.createElement('div',{key:it.id,className:'chip'},'👤 '+it.name))
+  ];
+
+  return React.createElement('div',null,
+    React.createElement('div',{className:'avatar',style:{background:col.bd}},initials(node.name)),
+    React.createElement('div',{className:'detail-name'},node.name),
+    React.createElement('div',{className:'detail-sub'},`Generation ${node.generation??'?'}`),
+    React.createElement('div',{className:'btn-row',style:{marginBottom:16}},
+      React.createElement('button',{className:'btn sm',onClick:()=>onEdit(node)},'✏ Edit'),
+      React.createElement('button',{className:'btn sm',onClick:()=>onAdd(node)},'+ Child'),
+      node._pid&&React.createElement('button',{className:'btn sm danger',onClick:()=>onDelete(id)},'🗑 Delete'),
+    ),
+    parent&&[
+      React.createElement('div',{key:'pl',className:'sec-t'},'Parent (in tree)'),
+      React.createElement('div',{key:'pc',className:'chip'},'👤 '+parent.name)
+    ],
+    Section('Children',kids),
+    Section('Siblings',sibs),
+    React.createElement('div',{style:{marginTop:14}},
+      React.createElement('div',{className:'sec-t'},'Details'),
+      React.createElement('div',{className:'drow'},React.createElement('span',{className:'dl'},'ID'),React.createElement('span',{className:'dv',style:{fontFamily:'monospace',fontSize:11}},id)),
+      node.gender&&React.createElement('div',{className:'drow'},React.createElement('span',{className:'dl'},'Gender'),React.createElement('span',{className:'dv'},node.gender)),
+      node.father&&React.createElement('div',{className:'drow'},React.createElement('span',{className:'dl'},'Father'),React.createElement('span',{className:'dv'},node.father)),
+      node.mother&&React.createElement('div',{className:'drow'},React.createElement('span',{className:'dl'},'Mother'),React.createElement('span',{className:'dv'},node.mother)),
+      node.spouse&&React.createElement('div',{className:'drow'},React.createElement('span',{className:'dl'},node.gender==='Female'?'Husband':node.gender==='Male'?'Wife':'Spouse'),React.createElement('span',{className:'dv'},node.spouse)),
+      node.location&&React.createElement('div',{className:'drow'},React.createElement('span',{className:'dl'},'Location'),React.createElement('span',{className:'dv'},node.location)),
+      node.contact&&React.createElement('div',{className:'drow'},React.createElement('span',{className:'dl'},'Contact'),React.createElement('span',{className:'dv'},node.contact)),
+      React.createElement('div',{className:'drow'},React.createElement('span',{className:'dl'},'Descendants'),React.createElement('span',{className:'dv'},descCount)),
+      React.createElement('div',{className:'drow'},React.createElement('span',{className:'dl'},'Direct children'),React.createElement('span',{className:'dv'},kids.length)),
+    )
+  );
+}
+
+/* ── Modal ────────────────────────────────────────────────────── */
+/* mode:'add'  → adding a new relationship. ID is auto-generated
+                 (read-only) and every relationship field below is
+                 required before Save is allowed.
+   mode:'edit' → editing an existing member. ID stays fixed;
+                 relationship fields stay optional so partially
+                 filled legacy records don't get blocked. */
+function Modal({title,init,onSave,onClose,mode}){
+  const [name,setName]=useState(init.name??'');
+  const [gender,setGender]=useState(init.gender??'Male');
+  const [father,setFather]=useState(init.father??'');
+  const [mother,setMother]=useState(init.mother??'');
+  const [spouse,setSpouse]=useState(init.spouse??'');
+  const [location,setLocation]=useState(init.location??'');
+  const [contact,setContact]=useState(init.contact??'');
+  const [gen,setGen]=useState(init.generation??1);
+  const [err,setErr]=useState('');
+
+  const isAdd=mode==='add';
+  const spouseLabel=gender==='Female'?'Husband':gender==='Male'?'Wife':'Spouse';
+  const req=isAdd?' *':'';
+
+  const handleSave=()=>{
+    if(!name.trim())return setErr("Full name is required");
+    if(isAdd){
+      if(!father.trim())return setErr("Father's name is required");
+      if(!spouse.trim())return setErr(`${spouseLabel}'s name is required`);
+      if(!location.trim())return setErr('Location is required');
+      if(!contact.trim())return setErr('Contact number is required');
+      if(!/^[0-9+\-\s()]{7,15}$/.test(contact.trim()))return setErr('Enter a valid contact number');
+    }
+    setErr('');
+    onSave({
+      name:name.trim(),id:init.id,gender,
+      father:father.trim(),mother:mother.trim(),spouse:spouse.trim(),
+      location:location.trim(),contact:contact.trim(),generation:gen,
+    });
+  };
+
+  const selStyle={width:'100%',padding:'11px 14px',border:'1px solid var(--border2)',borderRadius:'10px',background:'var(--bg3)',color:'var(--text)',fontSize:'15px',fontFamily:'inherit',outline:'none'};
+
+  return React.createElement('div',{className:'modal-mask',onClick:onClose},
+    React.createElement('div',{className:'modal',onClick:e=>e.stopPropagation()},
+      React.createElement('h3',null,title),
+      init.id&&React.createElement('div',{className:'fg'},
+        React.createElement('label',null,'ID'+(isAdd?' (auto-generated)':' (fixed)')),
+        React.createElement('input',{value:init.id,disabled:true,style:{opacity:.6,fontFamily:'monospace'}})
+      ),
+      React.createElement('div',{className:'fg'},React.createElement('label',null,'Full Name *'),React.createElement('input',{value:name,onChange:e=>setName(e.target.value),autoFocus:true,placeholder:'Enter full name'})),
+      React.createElement('div',{className:'fg'},React.createElement('label',null,'Gender'),
+        React.createElement('select',{value:gender,onChange:e=>setGender(e.target.value),style:selStyle},
+          React.createElement('option',{value:'Male'},'Male'),
+          React.createElement('option',{value:'Female'},'Female'),
+          React.createElement('option',{value:'Other'},'Other'),
+        )
+      ),
+      React.createElement('div',{className:'fg'},React.createElement('label',null,`Father's Name${req}`),React.createElement('input',{value:father,onChange:e=>setFather(e.target.value),placeholder:"Father's full name"})),
+      React.createElement('div',{className:'fg'},React.createElement('label',null,"Mother's Name"),React.createElement('input',{value:mother,onChange:e=>setMother(e.target.value),placeholder:"Mother's full name (optional)"})),
+      React.createElement('div',{className:'fg'},React.createElement('label',null,`${spouseLabel}'s Name${req}`),React.createElement('input',{value:spouse,onChange:e=>setSpouse(e.target.value),placeholder:`${spouseLabel}'s full name`})),
+      React.createElement('div',{className:'fg'},React.createElement('label',null,`Location${req}`),React.createElement('input',{value:location,onChange:e=>setLocation(e.target.value),placeholder:'City, State/Country'})),
+      React.createElement('div',{className:'fg'},React.createElement('label',null,`Contact Number${req}`),React.createElement('input',{value:contact,onChange:e=>setContact(e.target.value),placeholder:'+91 98765 43210',type:'tel'})),
+      React.createElement('div',{className:'fg'},React.createElement('label',null,'Generation'),React.createElement('input',{type:'number',value:gen,min:1,onChange:e=>setGen(+e.target.value)})),
+      err&&React.createElement('div',{className:'msg-err'},'⚠ '+err),
+      React.createElement('div',{className:'mfoot'},
+        React.createElement('button',{className:'btn',style:{flex:1},onClick:onClose},'Cancel'),
+        React.createElement('button',{className:'btn pri',style:{flex:1},onClick:handleSave},'Save'),
+      )
+    )
+  );
+}
+
+/* ── JSON Drawer content ──────────────────────────────────────── */
+function JSONPanel({jsonTxt,setJsonTxt,jsonErr,jsonOk,applyJSON,resetJSON,loadFile,dragOn,setDragOn}){
+  return React.createElement('div',null,
+    React.createElement('div',{
+      className:`drop-z${dragOn?' on':''}`,
+      onClick:()=>{const i=document.createElement('input');i.type='file';i.accept='.json';i.onchange=e=>loadFile(e.target.files[0]);i.click();},
+      onDragOver:e=>{e.preventDefault();setDragOn(true);},
+      onDragLeave:()=>setDragOn(false),
+      onDrop:e=>{e.preventDefault();setDragOn(false);loadFile(e.dataTransfer.files[0]);}
+    },'📁 Tap to upload a JSON file'),
+    React.createElement('textarea',{
+      className:'json-ta',value:jsonTxt,spellCheck:false,
+      onChange:e=>{setJsonTxt(e.target.value);},
+      placeholder:'Or paste JSON here…'
+    }),
+    jsonErr&&React.createElement('div',{className:'msg-err'},'⚠ '+jsonErr),
+    jsonOk&&React.createElement('div',{className:'msg-ok'},'✓ Tree updated!'),
+    React.createElement('div',{className:'btn-row',style:{marginTop:10}},
+      React.createElement('button',{className:'btn pri',onClick:applyJSON},'▶ Apply'),
+      React.createElement('button',{className:'btn',onClick:resetJSON},'↺ Reset'),
+    )
+  );
+}
+
+/* ── Generations Drawer content ───────────────────────────────── */
+function GensPanel({flat,genCounts,collapsed,collapseGen,expandGen,expandAll,collapseAll,dark}){
+  return React.createElement('div',null,
+    React.createElement('div',{className:'btn-row',style:{marginBottom:16}},
+      React.createElement('button',{className:'btn pri',onClick:expandAll},'⊞ Expand All'),
+      React.createElement('button',{className:'btn',onClick:collapseAll},'⊟ Collapse All'),
+    ),
+    React.createElement('div',{className:'sec-t'},'By Generation'),
+    Object.entries(genCounts).sort((a,b)=>+a[0]-+b[0]).map(([gen,cnt])=>{
+      const col=gc(+gen,dark);
+      const hasP=flat.some(n=>(n.generation??1)===+gen&&(n.children??[]).length>0);
+      return React.createElement('div',{key:gen,className:'gen-row'},
+        React.createElement('div',{className:'gen-dot',style:{background:col.bd}}),
+        React.createElement('span',{className:'gen-label'},`Generation ${gen}`),
+        React.createElement('span',{className:'gen-count'},cnt+' members'),
+        React.createElement('div',{className:'gen-actions'},
+          hasP&&React.createElement('div',{className:'gen-ic',title:`Collapse Gen ${gen}`,onClick:()=>collapseGen(+gen)},'−'),
+          hasP&&React.createElement('div',{className:'gen-ic',title:`Expand Gen ${gen}`,onClick:()=>expandGen(+gen)},'+'),
+        )
+      );
+    }),
+    React.createElement('div',{className:'sec-t',style:{marginTop:18}},'Statistics'),
+    React.createElement('div',{className:'stat-r'},React.createElement('span',{className:'stat-l'},'Total members'),React.createElement('span',null,flat.length)),
+    React.createElement('div',{className:'stat-r'},React.createElement('span',{className:'stat-l'},'Generations'),React.createElement('span',null,Object.keys(genCounts).length)),
+  );
+}
+
+/* ── Main App ─────────────────────────────────────────────────── */
+function App(){
+  const ls=k=>{try{const s=localStorage.getItem(k);return s?JSON.parse(s):null;}catch{return null;}};
+  const [data,setData]=useState(ls('ft_d')??SEED);
+  const [jsonTxt,setJsonTxt]=useState(JSON.stringify(ls('ft_d')??SEED,null,2));
+  const [jsonErr,setJsonErr]=useState(null);
+  const [jsonOk,setJsonOk]=useState(false);
+  const [collapsed,setCollapsed]=useState(new Set());
+  const [selId,setSelId]=useState(null);
+  const [dark,setDark]=useState(ls('ft_dk')==='1');
+  const [drawer,setDrawer]=useState(null); // 'menu'|'gens'|'json'|'detail'|'search'
+  const [srch,setSrch]=useState('');
+  const [showDrop,setShowDrop]=useState(false);
+  const [editM,setEditM]=useState(null);
+  const [addM,setAddM]=useState(null);
+  const [toast,setToast]=useState(null);
+  const [dragOn,setDragOn]=useState(false);
+  const [hist,setHist]=useState([]);
+  const [redoStack,setRedo]=useState([]);
+  const [zoom,setZoom]=useState(100);
+  const [editor,setEditor]=useState(()=>localStorage.getItem('ft_editor')||'');
+  const [nameDraft,setNameDraft]=useState('');
+  const [identityOpen,setIdentityOpen]=useState(()=>!localStorage.getItem('ft_editor'));
+  const [syncStatus,setSyncStatus]=useState('saving');
+  const [syncError,setSyncError]=useState('');
+  const [lastEdit,setLastEdit]=useState({name:'System',timestamp:null});
+  const pendingRemote=useRef(null);
+  const dialogOpenRef=useRef(false);
+  const dataRef=useRef(data);
+
+  window._setZ=setZoom;
+
+  const flat=useMemo(()=>flatten(data),[data]);
+  const genCounts=useMemo(()=>{const m={};flat.forEach(n=>{const g=n.generation??1;m[g]=(m[g]??0)+1;});return m;},[flat]);
+  const highlight=useMemo(()=>{
+    if(!selId)return null;
+    return new Set([selId,...getAncestors(selId,flat),...getDescendants(selId,flat)]);
+  },[selId,flat]);
+
+  useEffect(()=>{dataRef.current=data;try{localStorage.setItem('ft_d',JSON.stringify(data));}catch{};},[data]);
+  useEffect(()=>{
+    try{localStorage.setItem('ft_dk',dark?'1':'0');}catch{}
+    document.documentElement.toggleAttribute('data-dark',dark);
+  },[dark]);
+  useEffect(()=>{
+    dialogOpenRef.current=!!(editM||addM||drawer==='json');
+    if(!dialogOpenRef.current&&pendingRemote.current){
+      const r=pendingRemote.current; pendingRemote.current=null;
+      setData(r.tree);setJsonTxt(JSON.stringify(r.tree,null,2));setLastEdit({name:r.lastEditedBy,timestamp:r.lastEditedAt});
+      toast_('Remote update applied');
+    }
+  },[editM,addM,drawer]);
+  useEffect(()=>{
+    let unsub=()=>{};
+    let cancelled=false;
+    let retryTimer=null;
+
+    const connect=()=>{
+      if(cancelled)return;
+      const b=window.familySync;
+      if(!b){
+        retryTimer=setTimeout(connect,100);
+        return;
+      }
+
+      unsub=b.subscribe(evt=>{
+        if(evt.type==='status'){setSyncStatus(evt.status);setSyncError(evt.message||'');}
+        if(evt.type==='remote'&&evt.tree){
+          if(dialogOpenRef.current) pendingRemote.current=evt;
+          else {
+            setData(evt.tree);
+            setJsonTxt(JSON.stringify(evt.tree,null,2));
+            setLastEdit({name:evt.lastEditedBy,timestamp:evt.lastEditedAt});
+          }
+        }
+      });
+
+      const boot=()=>{
+        if(b.error){
+          setSyncStatus('error');
+          setSyncError(b.error);
+          return;
+        }
+        if(b.ready&&b.init){
+          b.init(SEED).catch(e=>{
+            setSyncStatus('error');
+            setSyncError(e.message);
+          });
+        } else {
+          retryTimer=setTimeout(boot,100);
+        }
+      };
+      boot();
+    };
+
+    connect();
+    return ()=>{
+      cancelled=true;
+      if(retryTimer)clearTimeout(retryTimer);
+      unsub();
+    };
+  },[]);
+
+  const toast_=msg=>{setToast(msg);setTimeout(()=>setToast(null),2200);};
+  const pushH=prev=>{setHist(h=>[...h.slice(-40),prev]);setRedo([]);};
+  const saveRemote=next=>{const b=window.familySync;if(!editor){setIdentityOpen(true);return;} if(b&&b.save)b.save(next,editor).catch(e=>{setSyncStatus('error');setSyncError(e.message);toast_('Sync error');});};
+  const mutate=next=>{pushH(data);setData(next);setJsonTxt(JSON.stringify(next,null,2));saveRemote(next);};
+  const commitEditor=()=>{const n=nameDraft.trim();if(!n)return;localStorage.setItem('ft_editor',n);setEditor(n);setIdentityOpen(false);setNameDraft('');toast_('Name saved');};
+  const relTime=iso=>{if(!iso)return 'just now';const s=Math.max(0,Math.floor((Date.now()-new Date(iso))/1000));if(s<60)return 'just now';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return new Date(iso).toLocaleDateString();};
+
+  const srchRes=useMemo(()=>{
+    if(!srch.trim())return[];
+    const q=srch.toLowerCase();
+    return flat.filter(n=>n.name.toLowerCase().includes(q)).slice(0,12);
+  },[srch,flat]);
+
+  /* JSON */
+  const applyJSON=()=>{
+    try{
+      const p=JSON.parse(jsonTxt),e=validate(p);
+      if(e){setJsonErr(e);return;}
+      pushH(data);setData(p);setCollapsed(new Set());setSelId(null);
+      setJsonErr(null);setJsonOk(true);setTimeout(()=>setJsonOk(false),2000);
+      saveRemote(p);toast_('Tree updated!');setDrawer(null);
+    }catch(e){setJsonErr('Invalid JSON: '+e.message);}
+  };
+  const resetJSON=()=>{setJsonTxt(JSON.stringify(data,null,2));setJsonErr(null);};
+  const loadFile=f=>{
+    if(!f)return;
+    const r=new FileReader();
+    r.onload=e=>{
+      setJsonTxt(e.target.result);
+      try{const p=JSON.parse(e.target.result),err=validate(p);if(err){setJsonErr(err);return;}pushH(data);setData(p);setCollapsed(new Set());setSelId(null);saveRemote(p);toast_('File loaded!');}
+      catch{setJsonErr('Invalid JSON');}
+    };
+    r.readAsText(f);
+  };
+
+  /* Export */
+  const dlJSON=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='family-tree.json';a.click();};
+  const dlPNG=()=>{
+    const svg=document.querySelector('#tree-svg');if(!svg)return;
+    const bb=svg.getBoundingClientRect(),clone=svg.cloneNode(true);
+    clone.setAttribute('width',bb.width*2);clone.setAttribute('height',bb.height*2);
+    const img=new Image();
+    img.onload=()=>{
+      const c=document.createElement('canvas');c.width=bb.width*2;c.height=bb.height*2;
+      const ctx=c.getContext('2d');ctx.fillStyle=dark?'#141210':'#f4f2ec';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0);
+      const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='family-tree.png';a.click();toast_('PNG saved!');
+    };
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(new XMLSerializer().serializeToString(clone));
+  };
+
+  /* Undo/Redo */
+  const undoFn=()=>{if(!hist.length)return;const p=hist[hist.length-1];setRedo(r=>[data,...r]);setHist(h=>h.slice(0,-1));setData(p);setJsonTxt(JSON.stringify(p,null,2));saveRemote(p);toast_('Undone');};
+  const redoFn=()=>{if(!redoStack.length)return;const n=redoStack[0];pushH(data);setRedo(r=>r.slice(1));setData(n);setJsonTxt(JSON.stringify(n,null,2));saveRemote(n);toast_('Redone');};
+
+  /* Collapse/Expand */
+  const toggle=id=>setCollapsed(c=>{const s=new Set(c);s.has(id)?s.delete(id):s.add(id);return s;});
+  const expandAll=()=>setCollapsed(new Set());
+  const collapseAll=()=>setCollapsed(allWithKids(data));
+  const collapseGen=g=>{const ids=flat.filter(n=>(n.generation??1)===g&&(n.children??[]).length>0).map(n=>n.id);setCollapsed(c=>{const s=new Set(c);ids.forEach(id=>s.add(id));return s;});};
+  const expandGen=g=>{const ids=flat.filter(n=>(n.generation??1)===g).map(n=>n.id);setCollapsed(c=>{const s=new Set(c);ids.forEach(id=>s.delete(id));return s;});};
+
+  /* Select */
+  const selectNode=id=>{
+    setSelId(p=>p===id?null:id);
+    const anc=getAncestors(id,flat);
+    setCollapsed(c=>{const s=new Set(c);anc.forEach(a=>s.delete(a));return s;});
+    setDrawer('detail');
+  };
+
+  /* Edit/Add/Delete */
+  const saveEdit=ch=>{mutate(updateNode(data,editM.id,ch));setEditM(null);toast_('Saved!');};
+  const saveAdd=ch=>{mutate(addChild(data,addM.id,{...ch,children:[]}));setAddM(null);toast_('Member added!');};
+  const handleDelete=id=>{if(!confirm('Delete this member and all descendants?'))return;mutate(deleteNode(data,id));setSelId(null);setDrawer(null);toast_('Deleted');};
+
+  const openDrawer=d=>setDrawer(prev=>prev===d?null:d);
+  const closeDrawer=()=>setDrawer(null);
+  const isOpen=d=>drawer===d;
+
+  /* Nav icons as text */
+  const NAV=[
+    {id:'gens',  icon:'⊞', label:'Expand'},
+    {id:'json',  icon:'{ }',label:'JSON'},
+    {id:'search',icon:'⌕', label:'Search'},
+    {id:'more',  icon:'⋯', label:'More'},
+  ];
+
+  return React.createElement('div',{id:'root'},
+
+    /* ── Top bar ── */
+    React.createElement('header',{className:'topbar'},
+      React.createElement('div',{className:'topbar-logo'},'🌳 Family Tree Explorer'),
+      React.createElement('div',{className:'topbar-gap'}),
+      /* Inline search bar */
+      React.createElement('div',{className:'tsrch'},
+        React.createElement('span',{className:'tsrch-ic'},'⌕'),
+        React.createElement('input',{
+          placeholder:'Search…',value:srch,
+          onChange:e=>{setSrch(e.target.value);setShowDrop(true);},
+          onFocus:()=>setShowDrop(true),
+          onBlur:()=>setTimeout(()=>setShowDrop(false),180)
+        }),
+        showDrop&&srchRes.length>0&&React.createElement('div',{className:'srch-drop'},
+          srchRes.map(n=>{
+            const col=gc(n.generation??1,dark);
+            return React.createElement('div',{key:n.id,className:'srch-item',
+              onClick:()=>{selectNode(n.id);setSrch('');setShowDrop(false);setTimeout(()=>window._fit&&window._fit(),120);}
+            },
+              React.createElement('span',null,n.name),
+              React.createElement('span',{className:'gbadge',style:{background:col.bg,color:col.bd,border:`1px solid ${col.bd}40`}},`G${n.generation}`)
+            );
+          })
+        )
+      ),
+      React.createElement('button',{
+        className:'fab',style:{width:36,height:36,fontSize:16,boxShadow:'none',border:'1px solid var(--border2)',marginLeft:6},
+        onClick:()=>setDark(d=>!d),title:'Toggle dark mode'
+      },dark?'☀':'☾'),
+    ),
+    React.createElement('div',{className:'syncbar'},
+      React.createElement('span',{className:`sync-dot sync-${syncStatus==='synced'?'ok':syncStatus}`}),
+      React.createElement('span',{title:syncError},syncStatus==='synced'?'Synced':syncStatus==='saving'?'Saving…':'Sync error'),
+      React.createElement('span',null,'·'),
+      React.createElement('span',{title:lastEdit.timestamp?new Date(lastEdit.timestamp).toLocaleString():''},`Last edited by ${lastEdit.name} · ${relTime(lastEdit.timestamp)}`),
+      React.createElement('span',null,'·'),
+      React.createElement('button',{className:'who-link',onClick:()=>{setNameDraft(editor);setIdentityOpen(true)}},editor?`You: ${editor}`:'Set your name')
+    ),
+
+    /* ── Canvas ── */
+    React.createElement('div',{className:'canvas'},
+      React.createElement(TreeSVG,{data,collapsed,toggleCollapse:toggle,selId,onSelect:selectNode,highlight,dark}),
+
+      /* FABs */
+      React.createElement('div',{className:'fab-group'},
+        React.createElement('button',{className:'fab',onClick:()=>window._zIn&&window._zIn(),title:'Zoom in'},'+'),
+        React.createElement('button',{className:'fab',onClick:()=>window._zOut&&window._zOut(),title:'Zoom out'},'−'),
+        React.createElement('button',{className:'fab pri',onClick:()=>window._fit&&window._fit(),title:'Fit tree'},'⊡'),
+      ),
+
+      /* Status */
+      React.createElement('div',{className:'status-pill'},
+        `${flat.length} members · ${Object.keys(genCounts).length} gens · ${zoom}%`
+      ),
+    ),
+
+    /* ── Bottom Navigation ── */
+    React.createElement('nav',{className:'bottomnav'},
+      /* Generations / expand */
+      React.createElement('button',{className:`nav-btn${isOpen('gens')?' active':''}`,onClick:()=>openDrawer('gens')},
+        React.createElement('span',{className:'ni'},'⊞'),
+        React.createElement('span',null,'Expand')
+      ),
+      /* JSON */
+      React.createElement('button',{className:`nav-btn${isOpen('json')?' active':''}`,onClick:()=>openDrawer('json')},
+        React.createElement('span',{className:'ni',style:{fontSize:16,fontFamily:'monospace'}},'{·}'),
+        React.createElement('span',null,'JSON')
+      ),
+      /* Undo */
+      React.createElement('button',{className:'nav-btn',onClick:undoFn,disabled:!hist.length},
+        React.createElement('span',{className:'ni'},'↩'),
+        React.createElement('span',null,'Undo')
+      ),
+      /* Export */
+      React.createElement('button',{className:'nav-btn',onClick:()=>openDrawer('export')},
+        React.createElement('span',{className:'ni'},'⬇'),
+        React.createElement('span',null,'Export')
+      ),
+      /* Selected member */
+      React.createElement('button',{className:`nav-btn${selId?' active':''}`,onClick:()=>selId&&openDrawer('detail')},
+        React.createElement('span',{className:'ni'},'👤'),
+        React.createElement('span',null,selId?'Info':'Member')
+      ),
+    ),
+
+    /* ── Drawer mask ── */
+    React.createElement('div',{className:`drawer-mask${drawer?' open':''}`,onClick:closeDrawer}),
+
+    /* ── Left Drawer: Generations ── */
+    React.createElement('div',{className:`drawer${isOpen('gens')?' open':''}`},
+      React.createElement('div',{className:'drawer-header'},
+        React.createElement('span',{className:'drawer-title'},'⊞ Expand / Collapse'),
+        React.createElement('button',{className:'drawer-close',onClick:closeDrawer},'×'),
+      ),
+      React.createElement('div',{className:'drawer-body'},
+        React.createElement(GensPanel,{flat,genCounts,collapsed,collapseGen,expandGen,expandAll,collapseAll,dark})
+      )
+    ),
+
+    /* ── Left Drawer: JSON ── */
+    React.createElement('div',{className:`drawer${isOpen('json')?' open':''}`},
+      React.createElement('div',{className:'drawer-header'},
+        React.createElement('span',{className:'drawer-title'},'{·} JSON Data'),
+        React.createElement('button',{className:'drawer-close',onClick:closeDrawer},'×'),
+      ),
+      React.createElement('div',{className:'drawer-body'},
+        React.createElement(JSONPanel,{jsonTxt,setJsonTxt,jsonErr,jsonOk,applyJSON,resetJSON,loadFile,dragOn,setDragOn})
+      )
+    ),
+
+    /* ── Left Drawer: Export ── */
+    React.createElement('div',{className:`drawer${isOpen('export')?' open':''}`},
+      React.createElement('div',{className:'drawer-header'},
+        React.createElement('span',{className:'drawer-title'},'⬇ Export'),
+        React.createElement('button',{className:'drawer-close',onClick:closeDrawer},'×'),
+      ),
+      React.createElement('div',{className:'drawer-body'},
+        React.createElement('div',{className:'sec-t'},'Download'),
+        React.createElement('button',{className:'btn',style:{width:'100%',marginBottom:10},onClick:dlJSON},'⬇  Download JSON file'),
+        React.createElement('button',{className:'btn',style:{width:'100%',marginBottom:10},onClick:dlPNG},'🖼  Export as PNG image'),
+        React.createElement('div',{className:'sec-t',style:{marginTop:16}},'Undo / Redo'),
+        React.createElement('div',{className:'btn-row'},
+          React.createElement('button',{className:'btn',disabled:!hist.length,onClick:()=>{undoFn();closeDrawer();}},'↩ Undo'),
+          React.createElement('button',{className:'btn',disabled:!redoStack.length,onClick:()=>{redoFn();closeDrawer();}},'↪ Redo'),
+        ),
+        React.createElement('div',{className:'sec-t',style:{marginTop:16}},'Dark Mode'),
+        React.createElement('button',{className:'btn',style:{width:'100%'},onClick:()=>{setDark(d=>!d);closeDrawer();}},dark?'☀  Switch to Light Mode':'☾  Switch to Dark Mode'),
+      )
+    ),
+
+    /* ── Right Drawer: Member Detail ── */
+    React.createElement('div',{className:`drawer-right${isOpen('detail')&&selId?' open':''}`},
+      React.createElement('div',{className:'drawer-header'},
+        React.createElement('button',{className:'drawer-close',style:{marginLeft:0,marginRight:10},onClick:closeDrawer},'×'),
+        React.createElement('span',{className:'drawer-title'},'Member Info'),
+      ),
+      React.createElement('div',{className:'drawer-body'},
+        selId&&React.createElement(DetailContent,{
+          id:selId,flat,dark,
+          onClose:closeDrawer,
+          onEdit:n=>{setEditM(n);closeDrawer();},
+          onAdd:n=>{setAddM(n);closeDrawer();},
+          onDelete:handleDelete,
+        })
+      )
+    ),
+
+    /* ── Modals ── */
+    editM&&React.createElement(Modal,{title:'Edit Member',init:editM,onSave:saveEdit,onClose:()=>setEditM(null),mode:'edit'}),
+    addM&&React.createElement(Modal,{title:'Add Family Member',init:{
+      id:nextId(flat),name:'',gender:'Male',
+      generation:(addM.generation??1)+1,
+      father:addM.name,mother:'',spouse:'',location:'',contact:'',
+    },onSave:saveAdd,onClose:()=>setAddM(null),mode:'add'}),
+
+    identityOpen&&React.createElement('div',{className:'identity-mask'},
+      React.createElement('div',{className:'identity-card'},
+        React.createElement('h2',null,'Who are you?'),
+        React.createElement('p',null,'Your name will show next to edits you make.'),
+        React.createElement('input',{autoFocus:true,placeholder:'Your name',value:nameDraft,onChange:e=>setNameDraft(e.target.value),onKeyDown:e=>e.key==='Enter'&&commitEditor()}),
+        React.createElement('button',{className:'btn pri',style:{width:'100%'},disabled:!nameDraft.trim(),onClick:commitEditor},'Continue')
+      )
+    ),
+
+    /* ── Toast ── */
+    toast&&React.createElement('div',{className:'toast'},toast),
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+</script>
+</body>
+</html>
